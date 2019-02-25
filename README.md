@@ -21,13 +21,47 @@ next `then` as an argument.
 
 ## Authentication Token
 
+### Authentication Motivation
+
+Many APIs require users to pass an authentication token in order to make a 
+request. When APIs first appeared, developers saw limitless possibilities
+of finding people, finding their friends, connecting them based on interest
+and doing Good Things In the World.
+
+But where there's information there's an opportunity for profit and many APIs
+were used by hordes of anonymous robots that recursively exhausted APIs to
+mine user / user contact / user interest information, bundle it up, and sell it
+off to the highest bidder and all of it was _perfectly legal_.
+
+But uses such as this are painful for the API provider. First it cuts them out
+of a revenue stream _while_ it bangs away at their server infrastructure. This
+can lead the server(s) to crash or for the usage bill at a provider (such as 
+Amazon AWS) to be destructively expensive. In the early 2000's "bot" usage of
+Twitter was one of the contributing factors for the site's frequent downtime 
+and "[FailWhale][]."
+
+"Bots" can also bog down service by sending update (POST) requests over and over.
+Because writing to a database is a slower operation than a read, many unified
+bots (a "bot-net") can bog down a server by sending spammy update requests.
+
+![Why We Can't Have Nice Things](https://media.giphy.com/media/7QOd9u8qQ4Hio/giphy.gif)
+
+While not impossible to beat, authentication tokens reduce the number of _anonymous_
+users of an API. If a given token-holder is determined to be a Bad Person, the service
+can revoke that token.
+
+### Github and Authentication
+
 GitHub's [v3 API][v3] uses [OAuth2][github oauth] for authorization. Setting up
-the full OAuth2 authorization code grant workflow is beyond the scope of this
-lab, but it is described well in the GitHub [docs][github oauth], and I highly
-recommend you give it a read.
+the _full_ OAuth2 authorization code grant workflow is beyond the scope of this
+lab, but it is described well in the GitHub [docs][github oauth]. OAuth2 is the
+industry standard and, if you plan on integrating with any API, you **must** master
+this setup.
 
 Fortunately, GitHub also allows you to generate your own personal authorization
-token that we can use to give us authorized access to the API.
+token that we can use to give us authorized access to the API. These tokens are
+less complicated to setup and use (yes!) than OAuth2. We'll take advantage of this
+and use a personal access token (or, PAT in GitHub documents).
 
 If you already have a personal token that you've been using to make API
 requests, you can keep using that one. Otherwise, you'll need to generate a new
@@ -44,6 +78,10 @@ Using the token to [access the API][api] is a simple matter of creating an
 We need to provide our authorization token in order to list our own repositories
 with this API, so let's add our `Authorization` header (don't forget to assign
 your token to `const token`).
+
+> **RECALL** Doesn't it make sense to require API users to be _slightly_ more than
+"some anonymous person on the internet" in order to reveal one of GitHub's beloved
+users' repos?
 
 ```js
 const token = 'YOUR_TOKEN_HERE';
@@ -92,6 +130,9 @@ Here we created an object called `postData` that we will pass as a JSON string
 using `JSON.stringify` in the request `body`. We're also setting the method to
 `'POST'`, and finally using our `Authorization` header like we did before, since
 any write action is going to require authorization.
+
+> **RECALL** Doesn't it make sense to require API users to be _known_ in order to
+write to their database? The PAT ensures that!
 
 All of these additional settings go in that `options` argument, which is just an
 object that we can pass as the second argument to `fetch`.
@@ -163,5 +204,7 @@ and are using the most recent versions of node and nvm.
 [api]: https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-authorization-options-for-oauth-apps/#3-use-the-access-token-to-access-the-api
 [mixin]: https://developer.mozilla.org/en-US/docs/Web/API/Body
 [setup]: http://help.learn.co/technical-support/local-environment/mac-osx-manual-environment-set-up
+[FailWhale]: http://www.yiyinglu.com/?portfolio=lifting-a-dreamer-aka-twitter-fail-whale
 
 <p data-visibility='hidden'>View <a href='https://learn.co/lessons/js-ajax-fetch-lab' title='JavaScript Fetch Lab'>Javascript Fetch Lab</a> on Learn.co and start learning to code for free.</p>
+
