@@ -43,11 +43,13 @@ describe('index', () => {
         
       await forkRepo();
         
+      expect(window.fetch.__spy.called, "fetch was not called in forkRepo").to.eq(true)
       expect( window.fetch, "A fetch to the https://api.github.com/repos/learn-co-curriculum/js-ajax-fetch-lab/forks was not found" )
       .to.have.been.called.with( 'https://api.github.com/repos/learn-co-curriculum/js-ajax-fetch-lab/forks' );
     
-      expect( headers[ 'authorization' ][ 0 ] )
-        .to.include( 'token' )
+      expect(headers[ 'authorization' ], 'Authorization header not found').to.exist
+      expect( headers[ 'authorization' ][ 0 ], 'Authorization header expected to point to "token " without the actual token' )
+        .to.eq( 'token ' )
         
     });
 
@@ -83,11 +85,13 @@ describe('index', () => {
 
       await createIssue();
 
+      expect(window.fetch.__spy.called, "fetch was not called in createIssue").to.eq(true)
       expect( window.fetch, `A POST request to the https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues was not found` )
       .to.have.been.called.with( `https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues` );
-      
-      expect( headers[ 'authorization' ][ 0 ] )
-        .to.include( 'token' )
+      expect(window.fetch.__spy.calls[0][0], 'Do not post issues to learn-co-curriculum, post them to your own fork').to.not.match(/learn-co-curriculum/)
+      expect(headers[ 'authorization' ], 'Authorization header not found').to.exist
+      expect( headers[ 'authorization' ][ 0 ], 'Authorization header expected to point to "token " without the actual token' )
+        .to.eq( 'token ' )
       expect(reqBody).to.match(/test body/);
     });
 
@@ -108,12 +112,13 @@ describe('index', () => {
 
       await getIssues();
 
-        
+      expect(window.fetch.__spy.called, "fetch was not called in getIssues").to.eq(true)
       expect( window.fetch, `A GET request to the https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues was not found` )
       .to.have.been.called.with( `https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues` );
-      
-      expect( headers[ 'authorization' ][ 0 ] )
-        .to.include( 'token' )
+      expect(window.fetch.__spy.calls[0][0], 'Do not get issues from the learn-co-curriculum repo, retrieve them from your own fork').to.not.match(/learn-co-curriculum/)
+      expect(headers[ 'authorization' ], 'Authorization header not found').to.exist
+      expect( headers[ 'authorization' ][ 0 ], 'Authorization header expected to point to "token " without the actual token' )
+        .to.eq( 'token ' )
     
     });
   });
