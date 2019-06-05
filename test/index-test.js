@@ -1,80 +1,109 @@
-const expect = require('expect');
-const fs = require('fs');
-const jsdom = require('jsdom');
-const path = require('path');
+require( './helpers' );
+const chai = require( 'chai' );
+const spies = require( 'chai-spies' );
+const nock = require( 'nock' );
+chai.use( spies );
 
 describe('index', () => {
-  before(done => {
-    const html = path.resolve(__dirname, '..', 'index.html');
-    const src = path.resolve(__dirname, '..', 'index.js');
-
-    jsdom.env(html, [src], (err, window) => {
-      if (err) {
-        return done(err);
-      }
-
-      Object.keys(window).forEach(key => {
-        global[key] = window[key];
-      });
-
-      done();
-    });
-  });
+ 
 
   it('does not commit token', () => {
-    expect(getToken()).toEqual('');
+    expect(getToken()).to.equal('');
   });
 
   describe('index.html', () => {
     it('creates a div with an id of "issues"', () => {
-      expect(document.getElementById('issues')).toExist();
+  
+      expect(document.getElementById('issues')).to.exist;
     });
   });
 
   describe('fetch functions', () => {
-    let fetchSpy;
+    
     before(() => {
       window.fetch = require('node-fetch');
+      chai.spy.on( window, 'fetch' );
+      window.onerror = undefined;
     });
 
-    beforeEach(() => {
-      fetchSpy = expect.spyOn(window, 'fetch').andReturn(new Promise(() => {}));
+   
+
+
+    it('fetches the create fork api', async () => {
+      let reqBody
+      let headers
+
+      nock( 'https://api.github.com' )
+        .post( '/repos/learn-co-curriculum/js-ajax-fetch-lab/forks' )
+        .reply( 201, function ( uri, requestBody ) {
+          reqBody = requestBody
+          headers = this.req.headers
+          return {
+            ...requestBody
+          }
+        } );
+        
+      await forkRepo();
+        
+      expect( window.fetch, "A fetch to the https://api.github.com/repos/learn-co-curriculum/js-ajax-fetch-lab/forks was not found" )
+      .to.have.been.called.with( 'https://api.github.com/repos/learn-co-curriculum/js-ajax-fetch-lab/forks' );
+      expect( window.fetch )
+        .to.have.been.called.exactly( 1 );
+      expect( headers[ 'authorization' ][ 0 ] )
+        .to.include( 'token' )
+        
     });
 
-    afterEach(() => {
-      fetchSpy.restore();
-    });
+    it('fetches the create issue api', async () => {
+      let reqBody
+      let headers
+      
+      nock( 'https://api.github.com' )
+        .post( `/repos/${user}/js-ajax-fetch-lab/issues` )
+        .reply( 201, function ( uri, requestBody ) {
+          reqBody = requestBody
+          headers = this.req.headers
+          return {
+            ...requestBody
+          }
+        } );
 
-    it('fetches the create fork api', () => {
-      forkRepo();
-      const url = fetchSpy.calls[0].arguments[0];
-      expect(url).toMatch(
-        /api.github.com\/repos\/learn-co-curriculum\/js-ajax-fetch-lab\/forks/
-      );
-      const opts = fetchSpy.calls[0].arguments[1];
-      expect(opts.method).toMatch(/(post|POST)/);
-      expect(opts.headers).toMatch(/Authorization: token\s./);
-    });
-
-    it('fetches the create issue api', () => {
+        
       document.getElementById('title').value = 'test';
       document.getElementById('body').value = 'test body';
 
-      createIssue();
-      const url = fetchSpy.calls[0].arguments[0];
-      expect(url).toMatch(/js-ajax-fetch-lab.*\/issues/);
-      expect(url).toNotMatch(/learn-co-curriculum/);
-      const opts = fetchSpy.calls[0].arguments[1];
-      expect(opts.method).toMatch(/(post|POST)/);
-      expect(opts.headers).toMatch(/Authorization: token\s./);
-      expect(opts.body).toMatch(/test body/);
+      await createIssue();
+
+      expect( window.fetch, `A POST request to the https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues was not found` )
+      .to.have.been.called.with( `https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues` );
+      
+      expect( headers[ 'authorization' ][ 0 ] )
+        .to.include( 'token' )
+      expect(reqBody).to.match(/test body/);
     });
 
-    it('fetches the get issues api', () => {
-      getIssues();
-      const url = fetchSpy.calls[0].arguments[0];
-      expect(url).toMatch(/js-ajax-fetch-lab.*\/issues/);
-      expect(url).toNotMatch(/learn-co-curriculum/);
+    it('fetches the get issues api', async () => {
+      let reqBody
+      let headers
+      
+      nock( 'https://api.github.com' )
+        .get( `/repos/${user}/js-ajax-fetch-lab/issues` )
+        .reply( 201, function ( uri, requestBody ) {
+          reqBody = requestBody
+          headers = this.req.headers
+          return {
+            ...requestBody
+          }
+        } );
+
+      await getIssues();
+
+      expect( window.fetch, `A GET request to the https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues was not found` )
+      .to.have.been.called.with( `https://api.github.com/repos/${user}/js-ajax-fetch-lab/issues` );
+      
+      expect( headers[ 'authorization' ][ 0 ] )
+        .to.include( 'token' )
+    
     });
   });
 });
